@@ -78,18 +78,34 @@ check_disk_io() {
     # Teste rápido de I/O
     test_file="/tmp/.watchdog_io_test_$$"
     
-    # Timeout de 5 segundos para escrita
-    if timeout 5 dd if=/dev/zero of="$test_file" bs=1m count=10 2>/dev/null; then
-        rm -f "$test_file"
-        echo -e "${GREEN}✅ I/O de disco OK${NC}"
-        log_message "DISK I/O: OK"
-        return 0
-    else
+    # Timeout de 3 segundos para escrita (macOS pode não ter timeout command)
+    start_time=$(date +%s)
+    dd if=/dev/zero of="$test_file" bs=1m count=10 2>/dev/null &
+    dd_pid=$!
+    
+    # Esperar até 3 segundos
+    sleep_count=0
+    while kill -0 $dd_pid 2>/dev/null && [ $sleep_count -lt 30 ]; do
+        sleep 0.1
+        sleep_count=$((sleep_count + 1))
+    done
+    
+    # Se ainda está rodando, matar
+    if kill -0 $dd_pid 2>/dev/null; then
+        kill $dd_pid 2>/dev/null
         rm -f "$test_file"
         echo -e "${RED}❌ I/O de disco lento ou travado${NC}"
         log_message "DISK I/O: LENTO - risco de watchdog timeout"
         return 1
     fi
+    
+    end_time=$(date +%s)
+    duration=$((end_time - start_time))
+    
+    rm -f "$test_file"
+    echo -e "${GREEN}✅ I/O de disco OK (${duration}s)${NC}"
+    log_message "DISK I/O: OK (${duration}s)"
+    return 0
 }
 
 # Função para verificar carga do sistema
@@ -97,7 +113,12 @@ check_system_load() {
     echo -e "${YELLOW}[4/6] Verificando carga do sistema...${NC}"
     
     load_avg=$(sysctl -n vm.loadavg | awk '{print $2}')
-    load_int=${load_avg%.*}
+    # Converter vírgula para ponto (localização)
+    load_avg=$(echo "$load_avg" | tr ',' '.')
+    # Extrair parte inteira
+    load_int=$(echo "$load_avg" | cut -d. -f1)
+    # Se vazio, assumir 0
+    load_int=${load_int:-0}
     
     echo "   Load average: $load_avg"
     
