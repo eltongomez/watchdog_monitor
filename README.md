@@ -84,10 +84,27 @@ chmod +x scripts/*.sh
 
 ## 🚀 Uso
 
-### Monitor Preventivo (Recomendado)
+### 🎨 Monitor Visual com Dashboard (Novo! Recomendado)
+
+Interface visual completa com notificações e feedback em tempo real:
 
 ```bash
-# Modo interativo (recomendado)
+# Dashboard terminal interativo
+./scripts/watchdog_monitor_visual.sh
+
+# Modo daemon (background) com notificações
+./scripts/watchdog_monitor_visual.sh --daemon
+
+# Dashboard web no navegador
+./scripts/open_dashboard.sh
+```
+
+**[📖 Guia Completo de Feedback Visual](docs/FEEDBACK_VISUAL.md)**
+
+### 📊 Monitor Básico (Terminal)
+
+```bash
+# Modo interativo
 ./scripts/watchdog_monitor.sh
 
 # Verificação única
