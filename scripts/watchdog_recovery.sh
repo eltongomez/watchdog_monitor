@@ -71,18 +71,45 @@ recover_load() {
 recover_thermal() {
     log_recovery "AÇÃO: Tentando resfriar sistema"
     
-    # Identificar processos que usam mais CPU
-    cpu_hogs=$(ps aux | grep -v "kernel" | sort -rn -k 3 | head -3 | awk '{print $2,$3,$11}')
+    # Identificar processos que usam mais CPU (>= 30%)
+    cpu_hogs=$(ps aux | grep -v "kernel" | awk '$3 >= 30.0 {print $2,$3,$11}' | head -5)
     
-    log_recovery "Top 3 processos por CPU:"
+    if [ -z "$cpu_hogs" ]; then
+        log_recovery "Nenhum processo pesado detectado (todos < 30% CPU)"
+        return 0
+    fi
+    
+    log_recovery "Top processos por CPU (>= 30%):"
     echo "$cpu_hogs" | while read pid cpu name; do
         log_recovery "  PID $pid ($cpu% CPU): $name"
+        
+        # Reduzir prioridade agressivamente para resfriar
+        if renice +15 -p $pid 2>/dev/null; then
+            log_recovery "  ✓ Prioridade reduzida: PID $pid"
+        else
+            log_recovery "  ✗ Falha ao reduzir prioridade: PID $pid"
+        fi
     done
     
-    # Notificar usuário
-    osascript -e "display notification \"Feche aplicações pesadas para resfriar o sistema\" with title \"⚠️ Temperatura Alta\" sound name \"Basso\"" 2>/dev/null
+    # Aguardar um pouco para CPU desacelerar
+    sleep 2
     
-    log_recovery "✓ Usuário notificado"
+    # Liberar memória também ajuda (menos swap = menos I/O = menos calor)
+    if sudo -n purge 2>/dev/null; then
+        log_recovery "✓ Memória liberada (reduz swap e I/O)"
+    fi
+    
+    # Sincronizar disco para reduzir I/O pendente
+    sync
+    
+    log_recovery "✓ Ações de resfriamento concluídas"
+    log_recovery "  → Processos pesados com prioridade reduzida"
+    log_recovery "  → Menos CPU = Menos calor gerado"
+    log_recovery "  → Sistema deve resfriar em 30-60 segundos"
+    
+    # Notificar usuário
+    osascript -e 'display notification "Processos pesados foram desacelerados para resfriar o sistema" with title "🌡️ Resfriamento Ativo" sound name "Basso"' 2>/dev/null
+    
     return 0
 }
 
