@@ -126,33 +126,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     
                     let color: NSColor
                     if value.contains("OK") {
-                        color = .systemGreen
+                        color = NSColor(red: 0.20, green: 0.78, blue: 0.35, alpha: 1.0) // #34C759
                     } else if value.contains("CRÍTICO") || value.contains("ERRO") {
-                        color = .systemRed
+                        color = NSColor(red: 1.0, green: 0.23, blue: 0.19, alpha: 1.0) // #FF3B30
                     } else if value.contains("AVISO") || value.contains("ALTO") || value.contains("BAIXO") {
-                        color = .systemOrange
+                        color = NSColor(red: 1.0, green: 0.58, blue: 0.0, alpha: 1.0) // #FF9500
                     } else {
                         color = .systemGray
                     }
                     
-                    let checkItem = NSMenuItem()
-                    let title = NSMutableAttributedString()
+                    // Create colored dot image
+                    let dotImage = NSImage(size: NSSize(width: 12, height: 12))
+                    dotImage.lockFocus()
+                    color.setFill()
+                    let circle = NSBezierPath(ovalIn: NSRect(x: 2, y: 2, width: 8, height: 8))
+                    circle.fill()
+                    dotImage.unlockFocus()
                     
-                    // Add colored dot
-                    let dotAttributes: [NSAttributedString.Key: Any] = [
-                        .foregroundColor: color,
-                        .font: NSFont.systemFont(ofSize: 12)
-                    ]
-                    title.append(NSAttributedString(string: "● ", attributes: dotAttributes))
-                    
-                    // Add label and value
-                    let textAttributes: [NSAttributedString.Key: Any] = [
-                        .foregroundColor: NSColor.labelColor,
-                        .font: NSFont.systemFont(ofSize: 13)
-                    ]
-                    title.append(NSAttributedString(string: "\(label): \(value)", attributes: textAttributes))
-                    
-                    checkItem.attributedTitle = title
+                    let checkItem = NSMenuItem(title: "  \(label): \(value)", action: nil, keyEquivalent: "")
+                    checkItem.image = dotImage
                     checkItem.isEnabled = false
                     self.menu.addItem(checkItem)
                 }
