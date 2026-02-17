@@ -48,7 +48,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if let button = self?.statusItem.button {
                 let attributes: [NSAttributedString.Key: Any] = [
                     .foregroundColor: NSColor.systemGray,
-                    .font: NSFont.systemFont(ofSize: 11)
+                    .font: NSFont.systemFont(ofSize: 8)
                 ]
                 button.attributedTitle = NSAttributedString(string: "○", attributes: attributes)
                 button.toolTip = "Watchdog Monitor - Inactive"
@@ -67,21 +67,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if status.contains("CRÍTICO") || status.contains("ERRO") {
                 attributes = [
                     .foregroundColor: NSColor.systemRed,
-                    .font: NSFont.systemFont(ofSize: 11)
+                    .font: NSFont.systemFont(ofSize: 8)
                 ]
                 button.attributedTitle = NSAttributedString(string: "●", attributes: attributes)
                 button.toolTip = "Watchdog Monitor - ERROR"
             } else if status.contains("AVISO") {
                 attributes = [
                     .foregroundColor: NSColor.systemOrange,
-                    .font: NSFont.systemFont(ofSize: 11)
+                    .font: NSFont.systemFont(ofSize: 8)
                 ]
                 button.attributedTitle = NSAttributedString(string: "●", attributes: attributes)
                 button.toolTip = "Watchdog Monitor - WARNING"
             } else {
                 attributes = [
                     .foregroundColor: NSColor.systemGreen,
-                    .font: NSFont.systemFont(ofSize: 11)
+                    .font: NSFont.systemFont(ofSize: 8)
                 ]
                 button.attributedTitle = NSAttributedString(string: "●", attributes: attributes)
                 button.toolTip = "Watchdog Monitor - OK"
