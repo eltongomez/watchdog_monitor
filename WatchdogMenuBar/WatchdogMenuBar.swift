@@ -10,6 +10,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusData: [String: Any] = [:]
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Configurar app como acessório (não aparece no Dock mas pode ser iniciado)
+        NSApp.setActivationPolicy(.accessory)
+        
         // Create status bar item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
