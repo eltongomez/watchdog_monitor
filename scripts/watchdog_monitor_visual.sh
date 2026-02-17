@@ -205,11 +205,16 @@ check_load() {
     load_avg=$(sysctl -n vm.loadavg | awk '{print $2}')
     load_avg=$(echo "$load_avg" | tr ',' '.')
     
+    # Threshold crítico da config (padrão 5.0)
+    local threshold_critical=${LOAD_THRESHOLD_CRITICAL:-5.0}
+    # Threshold de aviso = critical - 1.0
+    local threshold_warning=$(echo "$threshold_critical - 1.0" | bc)
+    
     # Usar awk para comparação de ponto flutuante
-    if awk "BEGIN {exit !($load_avg >= 5.0)}"; then
+    if awk "BEGIN {exit !($load_avg >= $threshold_critical)}"; then
         echo "CRÍTICO ($load_avg)"
         return 2
-    elif awk "BEGIN {exit !($load_avg >= 4.0)}"; then
+    elif awk "BEGIN {exit !($load_avg >= $threshold_warning)}"; then
         echo "ALTO ($load_avg)"
         return 1
     else
@@ -223,10 +228,15 @@ check_memory() {
     free_mem=$(vm_stat | grep "Pages free" | awk '{print $3}' | sed 's/\.//')
     free_mb=$((free_mem * 4096 / 1024 / 1024))
     
-    if [ "$free_mb" -lt 500 ]; then
+    # Threshold crítico da config (padrão 500)
+    local threshold_critical=${MEMORY_THRESHOLD_CRITICAL:-500}
+    # Threshold de aviso = critical * 2
+    local threshold_warning=$((threshold_critical * 2))
+    
+    if [ "$free_mb" -lt $threshold_critical ]; then
         echo "CRÍTICO (${free_mb}MB)"
         return 2
-    elif [ "$free_mb" -lt 1000 ]; then
+    elif [ "$free_mb" -lt $threshold_warning ]; then
         echo "BAIXO (${free_mb}MB)"
         return 1
     else
@@ -249,8 +259,18 @@ monitor_visual() {
     log_message "=== MONITORAMENTO VISUAL INICIADO ==="
     send_notification "Watchdog Monitor" "Monitoramento iniciado" "Glass"
     
+    # Carregar script de recovery para acessar funções anti-crash (v3.2)
+    if [ -f "$RECOVERY_SCRIPT" ]; then
+        source "$RECOVERY_SCRIPT"
+    fi
+    
     while true; do
         iteration=$((iteration + 1))
+        
+        # Aplicar Anti-Crash Mode se necessário (v3.2)
+        if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
+            apply_keepalive_if_needed
+        fi
         
         # Executar verificações
         smc_status=$(check_smc)
@@ -325,6 +345,13 @@ monitor_visual() {
         
         # Atualizar arquivo de status para widget
         update_status_file "$overall_text" "$smc_status" "$thermal_status" "$io_status" "$load_status" "$memory_status" "$fan_rpm_range"
+        
+        # ═══════════════════════════════════════════════════════════
+        # PREEMPTIVE RECOVERY (v3.2)
+        # ═══════════════════════════════════════════════════════════
+        if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ] && [ $iteration -gt 5 ]; then
+            preemptive_recovery
+        fi
         
         # ═══════════════════════════════════════════════════════════
         # RECUPERAÇÃO AUTOMÁTICA (v2.0)

@@ -1,12 +1,33 @@
 # 🛡️ Watchdog Monitor - macOS Kernel Panic Prevention
 
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/eltongomez/watchdog_monitor/releases/tag/v3.0.0)
+[![Version](https://img.shields.io/badge/version-3.2.0-blue.svg)](https://github.com/eltongomez/watchdog_monitor/releases/tag/v3.2.0)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Shell](https://img.shields.io/badge/shell-bash-orange.svg)](https://www.gnu.org/software/bash/)
 [![Swift](https://img.shields.io/badge/swift-5.0+-red.svg)](https://swift.org)
 
 **Sistema de prevenção automática de kernel panics** com recovery inteligente e menu bar app nativo para macOS.
+
+### ✨ Novidades v3.2 - Prevenção Inteligente!
+
+> **"Não apenas reage, previne. Não apenas monitora, aprende."**
+
+🎯 **3 Features Revolucionárias:**
+
+1. **🎚️ Recovery Profiles** - Escolha seu perfil de agressividade  
+   - Conservative (Seguro) - Age apenas em extremos  
+   - Balanced (Recomendado) - Equilíbrio perfeito  
+   - Aggressive (Performance) - Ação rápida
+
+2. **🛡️ Anti-Crash Mode** - Prevenção baseada no MBP-Anti-Crash  
+   - Off / Light / Moderate / Aggressive  
+   - Keep-alive inteligente (não desperdício)  
+   - Previne idle problemático automaticamente
+
+3. **⚡ Preemptive Recovery** - Age ANTES dos problemas  
+   - Detecta tendências (não só valores absolutos)  
+   - Machine learning básico  
+   - Recovery preventivo baseado em histórico
 
 ### ✅ Comprovadamente Funcional - v3.0
 
@@ -43,7 +64,7 @@ O SMC (System Management Controller) pode travar temporariamente, causando timeo
 - ✅ Nenhum driver de terceiros instalado
 - ❌ Reset SMC/NVRAM: Não resolveu
 
-## 🛠️ Sistema v3.0 - Recovery Automático
+## 🛠️ Sistema v3.2 - Recovery Inteligente + Prevenção
 
 ### 🎯 Menu Bar App Nativo
 
@@ -61,18 +82,44 @@ O SMC (System Management Controller) pode travar temporariamente, causando timeo
   - Ver Logs (Monitor + Recovery)
   - Executar Diagnósticos
 
+- 🎚️ **Recovery Profiles (v3.2 NEW!)**
+  - Conservative (Safe) - Thresholds conservadores
+  - Balanced (Recommended) - Equilíbrio ideal
+  - Aggressive (Performance) - Ação rápida preventiva
+
+- 🛡️ **Anti-Crash Mode (v3.2 NEW!)**
+  - Off - Sem intervenção power management
+  - Light - Caffeinate durante recovery apenas
+  - Moderate - Previne hibernation, keep-alive inteligente
+  - Aggressive - Keep-alive permanente (para Macs problemáticos)
+
 - ⚙️ **Configurações**
   - Toggle para iniciar com o sistema
   - Gerenciamento automático de LaunchAgent
 
 ### 🔄 Sistema de Recovery Automático
 
-**Detecção Inteligente com Thresholds Ajustados:**
+**Detecção Inteligente com Thresholds Configuráveis (v3.2):**
 
-| Métrica | Crítico (Ação Imediata) | Alerta (2ª Iteração) |
-|---------|-------------------------|----------------------|
-| **Memória** | < 500MB | < 1000MB |
-| **Load** | ≥ 5.0 | ≥ 4.0 |
+| Perfil | Memória Crítica | Load Crítico | Recovery Delay | Renice Level |
+|--------|-----------------|--------------|----------------|--------------|
+| **Conservative** | < 500MB | ≥ 5.0 | 30s | +10 |
+| **Balanced** | < 800MB | ≥ 4.5 | 15s | +15 |
+| **Aggressive** | < 1000MB | ≥ 4.0 | 5s | +19 |
+
+### ⚡ Preemptive Recovery (v3.2 NEW!)
+
+**Age ANTES dos problemas acontecerem:**
+
+- 📊 **Histórico de Métricas** - Últimas 100 leituras de memória/load
+- 📈 **Detecção de Tendências**
+  - Declining Fast: Memória caindo >100MB/check
+  - Declining Moderate: Memória caindo 50-100MB/check
+  - Rising Fast: Load subindo >1.0 em 5 checks
+  - Rising Moderate: Load subindo >0.5 em 5 checks
+- 🎯 **Ação Preventiva** - Recovery é acionado quando:
+  - Tendência negativa + valor ainda acima do threshold
+  - Exemplo: Memória em 1500MB mas caindo rápido → age AGORA (não espera chegar em 500MB)
 
 **Ações de Recovery:**
 1. 🧹 Limpeza de cache com `sudo purge`

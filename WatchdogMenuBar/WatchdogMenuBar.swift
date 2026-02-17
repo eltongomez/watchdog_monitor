@@ -209,6 +209,65 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self.menu.addItem(NSMenuItem(title: "Run Diagnostics", action: #selector(self.runDiagnostics), keyEquivalent: ""))
             self.menu.addItem(NSMenuItem.separator())
             
+            // Recovery Profile submenu (v3.2)
+            let profileMenu = NSMenu()
+            let currentProfile = self.getConfigValue("RECOVERY_PROFILE") ?? "conservative"
+            
+            let conservativeItem = NSMenuItem(title: currentProfile == "conservative" ? "✓ Conservative (Safe)" : "  Conservative (Safe)", 
+                                             action: #selector(self.setProfile(_:)), 
+                                             keyEquivalent: "")
+            conservativeItem.representedObject = "conservative"
+            profileMenu.addItem(conservativeItem)
+            
+            let balancedItem = NSMenuItem(title: currentProfile == "balanced" ? "✓ Balanced (Recommended)" : "  Balanced (Recommended)", 
+                                         action: #selector(self.setProfile(_:)), 
+                                         keyEquivalent: "")
+            balancedItem.representedObject = "balanced"
+            profileMenu.addItem(balancedItem)
+            
+            let aggressiveItem = NSMenuItem(title: currentProfile == "aggressive" ? "✓ Aggressive (Performance)" : "  Aggressive (Performance)", 
+                                           action: #selector(self.setProfile(_:)), 
+                                           keyEquivalent: "")
+            aggressiveItem.representedObject = "aggressive"
+            profileMenu.addItem(aggressiveItem)
+            
+            let profileItem = NSMenuItem(title: "Recovery Profile", action: nil, keyEquivalent: "")
+            profileItem.submenu = profileMenu
+            self.menu.addItem(profileItem)
+            
+            // Anti-Crash Mode submenu (v3.2)
+            let antiCrashMenu = NSMenu()
+            let currentMode = self.getConfigValue("ANTI_CRASH_MODE") ?? "0"
+            
+            let offItem = NSMenuItem(title: currentMode == "0" ? "✓ Off" : "  Off", 
+                                    action: #selector(self.setAntiCrashMode(_:)), 
+                                    keyEquivalent: "")
+            offItem.representedObject = "0"
+            antiCrashMenu.addItem(offItem)
+            
+            let lightItem = NSMenuItem(title: currentMode == "1" ? "✓ Light" : "  Light", 
+                                      action: #selector(self.setAntiCrashMode(_:)), 
+                                      keyEquivalent: "")
+            lightItem.representedObject = "1"
+            antiCrashMenu.addItem(lightItem)
+            
+            let moderateItem = NSMenuItem(title: currentMode == "2" ? "✓ Moderate" : "  Moderate", 
+                                         action: #selector(self.setAntiCrashMode(_:)), 
+                                         keyEquivalent: "")
+            moderateItem.representedObject = "2"
+            antiCrashMenu.addItem(moderateItem)
+            
+            let aggressiveModeItem = NSMenuItem(title: currentMode == "3" ? "✓ Aggressive" : "  Aggressive", 
+                                               action: #selector(self.setAntiCrashMode(_:)), 
+                                               keyEquivalent: "")
+            aggressiveModeItem.representedObject = "3"
+            antiCrashMenu.addItem(aggressiveModeItem)
+            
+            let antiCrashItem = NSMenuItem(title: "Anti-Crash Mode", action: nil, keyEquivalent: "")
+            antiCrashItem.submenu = antiCrashMenu
+            self.menu.addItem(antiCrashItem)
+            self.menu.addItem(NSMenuItem.separator())
+            
             // Settings submenu
             let settingsMenu = NSMenu()
             let autoStartItem = NSMenuItem(title: self.isAutoStartEnabled() ? "✓ Iniciar com o Sistema" : "  Iniciar com o Sistema", 
@@ -415,6 +474,72 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             kill(daemonPID, SIGTERM)
             daemonPID = 0
             daemonStartedByApp = false
+        }
+    }
+    
+    // Helper function to get config values (v3.2)
+    func getConfigValue(_ key: String) -> String? {
+        let configPath = NSHomeDirectory() + "/Projects/watchdog_monitor/config/recovery.conf"
+        
+        guard let content = try? String(contentsOfFile: configPath, encoding: .utf8) else {
+            return nil
+        }
+        
+        for line in content.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.starts(with: key + "=") {
+                let value = trimmed.replacingOccurrences(of: key + "=", with: "")
+                return value.trimmingCharacters(in: .whitespaces)
+            }
+        }
+        
+        return nil
+    }
+    
+    // Recovery Profile actions (v3.2)
+    @objc func setProfile(_ sender: NSMenuItem) {
+        guard let profile = sender.representedObject as? String else { return }
+        
+        let task = Process()
+        task.launchPath = "/bin/bash"
+        task.arguments = ["-c", "cd ~/Projects/watchdog_monitor && ./scripts/apply_profile.sh \(profile)"]
+        task.launch()
+        task.waitUntilExit()
+        
+        // Refresh menu to show new selection
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.loadStatus()
+        }
+    }
+    
+    // Anti-Crash Mode actions (v3.2)
+    @objc func setAntiCrashMode(_ sender: NSMenuItem) {
+        guard let mode = sender.representedObject as? String else { return }
+        
+        let configPath = NSHomeDirectory() + "/Projects/watchdog_monitor/config/recovery.conf"
+        
+        // Update config file
+        let task = Process()
+        task.launchPath = "/bin/bash"
+        task.arguments = ["-c", "sed -i '' 's/^ANTI_CRASH_MODE=.*/ANTI_CRASH_MODE=\(mode)/' \(configPath)"]
+        task.launch()
+        task.waitUntilExit()
+        
+        // Notify user
+        let modeNames = ["0": "Off", "1": "Light", "2": "Moderate", "3": "Aggressive"]
+        let modeName = modeNames[mode] ?? "Unknown"
+        
+        let notifyTask = Process()
+        notifyTask.launchPath = "/bin/bash"
+        notifyTask.arguments = ["-c", "osascript -e 'display notification \"Anti-Crash Mode set to \(modeName)\" with title \"Watchdog Monitor\" sound name \"Glass\"'"]
+        notifyTask.launch()
+        
+        // Restart daemon to apply changes
+        restartMonitor()
+        
+        // Refresh menu to show new selection
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            self.loadStatus()
         }
     }
     
