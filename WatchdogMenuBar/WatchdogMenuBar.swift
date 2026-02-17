@@ -46,7 +46,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func updateStatusBarInactive() {
         DispatchQueue.main.async { [weak self] in
             if let button = self?.statusItem.button {
-                button.title = "○"
+                let attributes: [NSAttributedString.Key: Any] = [
+                    .foregroundColor: NSColor.systemGray,
+                    .font: NSFont.systemFont(ofSize: 14)
+                ]
+                button.attributedTitle = NSAttributedString(string: "○", attributes: attributes)
                 button.toolTip = "Watchdog Monitor - Inactive"
             }
         }
@@ -58,14 +62,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                   let status = self.statusData["status"] as? String,
                   let button = self.statusItem.button else { return }
             
+            let attributes: [NSAttributedString.Key: Any]
+            
             if status.contains("CRÍTICO") || status.contains("ERRO") {
-                button.title = "●"
+                attributes = [
+                    .foregroundColor: NSColor.systemRed,
+                    .font: NSFont.systemFont(ofSize: 14)
+                ]
+                button.attributedTitle = NSAttributedString(string: "●", attributes: attributes)
                 button.toolTip = "Watchdog Monitor - ERROR"
             } else if status.contains("AVISO") {
-                button.title = "●"
+                attributes = [
+                    .foregroundColor: NSColor.systemOrange,
+                    .font: NSFont.systemFont(ofSize: 14)
+                ]
+                button.attributedTitle = NSAttributedString(string: "●", attributes: attributes)
                 button.toolTip = "Watchdog Monitor - WARNING"
             } else {
-                button.title = "●"
+                attributes = [
+                    .foregroundColor: NSColor.systemGreen,
+                    .font: NSFont.systemFont(ofSize: 14)
+                ]
+                button.attributedTitle = NSAttributedString(string: "●", attributes: attributes)
                 button.toolTip = "Watchdog Monitor - OK"
             }
         }
@@ -91,11 +109,50 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.menu.addItem(NSMenuItem.separator())
             }
             
-            // Checks
+            // Checks with colored dots
             if let checks = self.statusData["checks"] as? [String: String] {
-                for (key, value) in checks.sorted(by: { $0.key < $1.key }) {
-                    let label = key.uppercased()
-                    let checkItem = NSMenuItem(title: "\(label): \(value)", action: nil, keyEquivalent: "")
+                let checkOrder = ["smc", "thermal", "io", "load", "memory"]
+                let checkLabels = [
+                    "smc": "SMC Status",
+                    "thermal": "Temperature",
+                    "io": "Disk I/O",
+                    "load": "System Load",
+                    "memory": "Memory"
+                ]
+                
+                for key in checkOrder {
+                    guard let value = checks[key],
+                          let label = checkLabels[key] else { continue }
+                    
+                    let color: NSColor
+                    if value.contains("OK") {
+                        color = .systemGreen
+                    } else if value.contains("CRÍTICO") || value.contains("ERRO") {
+                        color = .systemRed
+                    } else if value.contains("AVISO") || value.contains("ALTO") || value.contains("BAIXO") {
+                        color = .systemOrange
+                    } else {
+                        color = .systemGray
+                    }
+                    
+                    let checkItem = NSMenuItem()
+                    let title = NSMutableAttributedString()
+                    
+                    // Add colored dot
+                    let dotAttributes: [NSAttributedString.Key: Any] = [
+                        .foregroundColor: color,
+                        .font: NSFont.systemFont(ofSize: 12)
+                    ]
+                    title.append(NSAttributedString(string: "● ", attributes: dotAttributes))
+                    
+                    // Add label and value
+                    let textAttributes: [NSAttributedString.Key: Any] = [
+                        .foregroundColor: NSColor.labelColor,
+                        .font: NSFont.systemFont(ofSize: 13)
+                    ]
+                    title.append(NSAttributedString(string: "\(label): \(value)", attributes: textAttributes))
+                    
+                    checkItem.attributedTitle = title
                     checkItem.isEnabled = false
                     self.menu.addItem(checkItem)
                 }
