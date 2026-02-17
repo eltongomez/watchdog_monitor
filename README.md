@@ -101,6 +101,24 @@ Interface visual completa com notificações e feedback em tempo real:
 
 **[📖 Guia Completo de Feedback Visual](docs/FEEDBACK_VISUAL.md)**
 
+### 🖥️ Widgets para Área de Trabalho (Novo!)
+
+Três opções de widgets sempre visíveis no desktop:
+
+```bash
+# Opção 1: Übersicht (Recomendado - Design moderno)
+cd desktop-widget
+./install-ubersicht.sh
+
+# Opção 2: GeekTool (Minimalista)
+# Copie o conteúdo de geektool-widget.sh no GeekTool
+
+# Opção 3: Standalone (Teste rápido)
+./desktop-widget/standalone-widget.sh
+```
+
+**[📖 Guia de Desktop Widgets](desktop-widget/README.md)**
+
 ### 📊 Monitor Básico (Terminal)
 
 ```bash
