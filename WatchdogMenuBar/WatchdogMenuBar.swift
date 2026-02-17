@@ -8,10 +8,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var menu: NSMenu!
     var timer: Timer?
     var statusData: [String: Any] = [:]
+    var daemonStartedByApp = false
+    var daemonPID: Int32 = 0
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Configurar app como acessório (não aparece no Dock mas pode ser iniciado)
         NSApp.setActivationPolicy(.accessory)
+        
+        // Configurar handler para sinais de término
+        signal(SIGTERM) { _ in
+            NSApp.terminate(nil)
+        }
+        signal(SIGINT) { _ in
+            NSApp.terminate(nil)
+        }
+        
+        // Iniciar daemon do monitor
+        startDaemon()
         
         // Create status bar item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -218,11 +231,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func restartMonitor() {
-        runCommand("pgrep -f watchdog_monitor_visual.sh | xargs kill; sleep 1; cd ~/Projects/watchdog_monitor && nohup ./scripts/watchdog_monitor_visual.sh --daemon > /dev/null 2>&1 &")
+        // Parar daemon
+        let killTask = Process()
+        killTask.launchPath = "/bin/bash"
+        killTask.arguments = ["-c", "pgrep -f watchdog_monitor_visual.sh | xargs kill 2>/dev/null || true"]
+        killTask.launch()
+        killTask.waitUntilExit()
+        
+        // Aguardar
+        sleep(1)
+        
+        // Reiniciar
+        startDaemon()
     }
     
     @objc func stopMonitor() {
-        runCommand("pgrep -f watchdog_monitor_visual.sh | xargs kill")
+        stopDaemon()
+        daemonStartedByApp = false
     }
     
     @objc func toggleWatchdog() {
@@ -324,6 +349,71 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         task.launchPath = "/bin/bash"
         task.arguments = ["-c", command]
         task.launch()
+    }
+    
+    func startDaemon() {
+        // Verificar se daemon já está rodando
+        let checkTask = Process()
+        checkTask.launchPath = "/bin/bash"
+        checkTask.arguments = ["-c", "pgrep -f 'watchdog_monitor_visual.sh --daemon'"]
+        
+        let pipe = Pipe()
+        checkTask.standardOutput = pipe
+        checkTask.launch()
+        checkTask.waitUntilExit()
+        
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        
+        if output.isEmpty {
+            // Daemon não está rodando, iniciar
+            let startTask = Process()
+            startTask.launchPath = "/bin/bash"
+            startTask.arguments = ["-c", "cd ~/Projects/watchdog_monitor && ./scripts/watchdog_monitor_visual.sh --daemon > /tmp/watchdog_daemon.log 2>&1 &"]
+            startTask.launch()
+            
+            daemonStartedByApp = true
+            
+            // Aguardar daemon iniciar
+            sleep(3)
+            
+            // Capturar PID do daemon iniciado
+            let pidTask = Process()
+            pidTask.launchPath = "/bin/bash"
+            pidTask.arguments = ["-c", "pgrep -f 'watchdog_monitor_visual.sh --daemon'"]
+            
+            let pidPipe = Pipe()
+            pidTask.standardOutput = pidPipe
+            pidTask.launch()
+            pidTask.waitUntilExit()
+            
+            let pidData = pidPipe.fileHandleForReading.readDataToEndOfFile()
+            if let pidString = String(data: pidData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: "\n").first,
+               let pid = Int32(String(pidString)) {
+                daemonPID = pid
+            }
+        } else if let pid = Int32(output.split(separator: "\n").first.map(String.init) ?? "") {
+            // Daemon já estava rodando, não parar ao fechar app
+            daemonPID = pid
+            daemonStartedByApp = false
+        }
+    }
+    
+    func stopDaemon() {
+        if daemonStartedByApp && daemonPID > 0 {
+            // Parar apenas se o app que iniciou
+            kill(daemonPID, SIGTERM)
+            daemonPID = 0
+            daemonStartedByApp = false
+        }
+    }
+    
+    func applicationWillTerminate(_ notification: Notification) {
+        // Parar timer
+        timer?.invalidate()
+        
+        // Parar daemon quando app fechar
+        stopDaemon()
     }
 }
 
