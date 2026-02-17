@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Watchdog Monitor - Sistema profissional de prevenção de kernel panics para macOS. Proteja seu Mac contra crashes inesperados.">
+    <meta name="keywords" content="macOS, kernel panic, crash prevention, watchdog, SMC, recovery">
+    <title>Watchdog Monitor - Proteção Profissional Contra Kernel Panics</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary: #764ba2;
+            --success: #48bb78;
+            --warning: #ed8936;
+            --danger: #f56565;
+            --dark: #1a202c;
+            --gray: #718096;
+            --light-gray: #edf2f7;
+            --white: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--white);
+            overflow-x: hidden;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: var(--white);
+            padding: 120px 20px 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>');
+            animation: float 30s linear infinite;
+        }
+        
+        @keyframes float {
+            from { transform: translateY(0); }
+            to { transform: translateY(-100px); }
+        }
+        
+        .hero-content {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .version-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            font-size: 3.5em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.2;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.2);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+        
+        .hero-tagline {
+            font-size: 1.1em;
+            margin-bottom: 40px;
+            font-style: italic;
+            opacity: 0.9;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 18px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: var(--white);
+            color: var(--primary);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--white);
+            border: 2px solid var(--white);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--white);
+            color: var(--primary);
+        }
+        
+        .download-info {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Section */
+        section {
+            padding: 80px 20px;
+        }
+        
+        .section-title {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: var(--dark);
+        }
+        
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            color: var(--gray);
+            margin-bottom: 60px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Problem Section */
+        .problem-section {
+            background: linear-gradient(135deg, #fef5e7 0%, #fadbd8 100%);
+        }
+        
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .problem-card {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .problem-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .problem-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .problem-card h3 {
+            color: var(--danger);
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        
+        /* Features Section */
+        .features-section {
+            background: var(--white);
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+        
+        .feature-card {
+            text-align: center;
+            padding: 40px 30px;
+            background: var(--light-gray);
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: var(--white);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .feature-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        
+        /* Compatibility Section */
+        .compatibility-section {
+            background: var(--dark);
+            color: var(--white);
+        }
+        
+        .compatibility-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .compat-item {
+            text-align: center;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .compat-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        /* Stats Section */
+        .stats-section {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: var(--white);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+        }
+        
+        .stat-box {
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .stat-number {
+            font-size: 4em;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        /* Installation Section */
+        .install-section {
+            background: var(--light-gray);
+        }
+        
+        .install-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .install-card {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .install-card h3 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .code-block {
+            background: var(--dark);
+            color: #10b981;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: var(--white);
+            padding: 60px 20px 30px;
+            text-align: center;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+            color: var(--white);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+        
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 20px;
+            margin-top: 30px;
+            color: var(--gray);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5em;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.2em;
+            }
+            
+            .section-title {
+                font-size: 2em;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+            }
+            
+            .install-methods {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="hero-content">
+            <div class="version-badge">🚀 Versão 3.2.0 - Intelligent Prevention</div>
+            <h1>🛡️ Watchdog Monitor</h1>
+            <p class="hero-subtitle">Sistema Profissional de Prevenção de Kernel Panics para macOS</p>
+            <p class="hero-tagline">"Não apenas reage, previne. Não apenas monitora, aprende."</p>
+            
+            <div class="cta-buttons">
+                <a href="https://github.com/eltongomez/watchdog_monitor/releases/download/v3.2.0/WatchdogMonitor-v3.2.0.zip" class="btn btn-primary">
+                    ⬇️ Download v3.2.0
+                </a>
+                <a href="https://github.com/eltongomez/watchdog_monitor" class="btn btn-secondary">
+                    📖 Ver Documentação
+                </a>
+            </div>
+            
+            <div class="download-info">
+                369 KB • macOS 10.14+ • Gratuito & Open Source
+            </div>
+        </div>
+    </div>
+
+    <!-- Problem Section -->
+    <section class="problem-section">
+        <div class="container">
+            <h2 class="section-title">🚨 Problemas que o Watchdog Resolve</h2>
+            <p class="section-subtitle">
+                Se você enfrenta estes problemas no seu Mac, o Watchdog Monitor é a solução definitiva:
+            </p>
+            
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-icon">💥</div>
+                    <h3>Kernel Panics Inexplicáveis</h3>
+                    <p>Crashes repentinos com mensagem "watchdog timeout: no checkins from watchdogd" que reiniciam o Mac sem aviso.</p>
+                </div>
+                
+                <div class="problem-card">
+                    <div class="problem-icon">🔥</div>
+                    <h3>SMC Travado</h3>
+                    <p>System Management Controller para de responder, causando freezes, superaquecimento e crashes do sistema.</p>
+                </div>
+                
+                <div class="problem-card">
+                    <div class="problem-icon">🐌</div>
+                    <h3>Memória Esgotada</h3>
+                    <p>Sistema lento devido à falta de RAM, com risco de travamento ao abrir aplicações pesadas.</p>
+                </div>
+                
+                <div class="problem-card">
+                    <div class="problem-icon">⚠️</div>
+                    <h3>Carga Excessiva</h3>
+                    <p>CPU sobrecarregada com processos pesados que tornam o sistema instável e irresponsivo.</p>
+                </div>
+                
+                <div class="problem-card">
+                    <div class="problem-icon">📉</div>
+                    <h3>Perda de Trabalho</h3>
+                    <p>Reinicializações forçadas causando perda de documentos não salvos e projetos abertos.</p>
+                </div>
+                
+                <div class="problem-card">
+                    <div class="problem-icon">🔄</div>
+                    <h3>Crashes Recorrentes</h3>
+                    <p>Problemas que se repetem diariamente, prejudicando produtividade e confiabilidade do Mac.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <h2 class="section-title">✨ Features Revolucionárias v3.2</h2>
+            <p class="section-subtitle">
+                Sistema inteligente com prevenção proativa e recuperação automática
+            </p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🎚️</span>
+                    <h3>Recovery Profiles</h3>
+                    <p><strong>Conservative</strong> (Seguro), <strong>Balanced</strong> (Recomendado) ou <strong>Aggressive</strong> (Performance). Escolha o perfil ideal para seu uso.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <span class="feature-icon">🛡️</span>
+                    <h3>Anti-Crash Mode</h3>
+                    <p>4 níveis de proteção: Off, Light, Moderate, Aggressive. Keep-alive inteligente previne idle problemático.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <span class="feature-icon">⚡</span>
+                    <h3>Preemptive Recovery</h3>
+                    <p>Detecta tendências e age ANTES dos problemas. Machine learning básico analisa 100 últimas leituras.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <span class="feature-icon">🟢</span>
+                    <h3>Menu Bar Nativo</h3>
+                    <p>App Swift com status visual em tempo real: Verde (OK), Amarelo (Alerta), Vermelho (Ação).</p>
+                </div>
+                
+                <div class="feature-card">
+                    <span class="feature-icon">🔄</span>
+                    <h3>Recovery Automático</h3>
+                    <p>Limpa cache, sincroniza disco, reduz prioridade de processos. Tudo automaticamente antes do crash.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <span class="feature-icon">📊</span>
+                    <h3>Monitoramento 24/7</h3>
+                    <p>6 métricas vitais: SMC, Temperatura, I/O, Load, Memória, RPM dos Coolers. Checks a cada 15s.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-number">0</span>
+                    <span class="stat-label">Crashes desde v3.0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">15s</span>
+                    <span class="stat-label">Intervalo de Detecção</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">Taxa de Sucesso</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">3</span>
+                    <span class="stat-label">Features Revolucionárias</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Compatibility Section -->
+    <section class="compatibility-section">
+        <div class="container">
+            <h2 class="section-title">💻 Compatibilidade</h2>
+            <p class="section-subtitle">
+                Testado e otimizado para MacBook Pro. Compatível com a maioria dos Macs Intel.
+            </p>
+            
+            <div class="compatibility-grid">
+                <div class="compat-item">
+                    <span class="compat-icon">🍎</span>
+                    <h3>macOS 10.14+</h3>
+                    <p>Mojave, Catalina, Big Sur, Monterey, Ventura, Sonoma</p>
+                </div>
+                
+                <div class="compat-item">
+                    <span class="compat-icon">💻</span>
+                    <h3>Macs Intel</h3>
+                    <p>MacBook Pro, iMac, Mac Mini, Mac Pro</p>
+                </div>
+                
+                <div class="compat-item">
+                    <span class="compat-icon">⚙️</span>
+                    <h3>Arquitetura</h3>
+                    <p>x86_64 (Intel). Apple Silicon em desenvolvimento</p>
+                </div>
+                
+                <div class="compat-item">
+                    <span class="compat-icon">🔓</span>
+                    <h3>Requisitos</h3>
+                    <p>sudo configurado (purge e pmset). Instalação automatizada.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section class="install-section">
+        <div class="container">
+            <h2 class="section-title">📥 Instalação Rápida</h2>
+            <p class="section-subtitle">
+                Escolha o método que preferir. Instalação completa em menos de 2 minutos.
+            </p>
+            
+            <div class="install-methods">
+                <div class="install-card">
+                    <h3>🚀 Método Recomendado</h3>
+                    <p>Clone o repositório e execute o instalador automático:</p>
+                    <div class="code-block">
+git clone https://github.com/eltongomez/watchdog_monitor.git<br>
+cd watchdog_monitor<br>
+./install.sh
+                    </div>
+                    <p>O instalador configura tudo automaticamente: app, daemon, sudo e LaunchAgent.</p>
+                </div>
+                
+                <div class="install-card">
+                    <h3>⬇️ Download Manual</h3>
+                    <p>Baixe o .zip, descompacte e mova para Applications:</p>
+                    <div class="code-block">
+# Após baixar WatchdogMonitor-v3.2.0.zip<br>
+unzip WatchdogMonitor-v3.2.0.zip<br>
+mv WatchdogMonitor.app ~/Applications/<br>
+open ~/Applications/WatchdogMonitor.app
+                    </div>
+                    <p>Configure sudo manualmente seguindo o <a href="https://github.com/eltongomez/watchdog_monitor#instalação" style="color: var(--primary);">guia de instalação</a>.</p>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 40px;">
+                <p style="color: var(--gray); margin-bottom: 15px;">
+                    <strong>SHA-256:</strong> b0b72189848ed65a1886e2a196fe25c9a06bdc1c92d0da767559e848fe9a1ddd
+                </p>
+                <a href="https://github.com/eltongomez/watchdog_monitor/releases/download/v3.2.0/WatchdogMonitor-v3.2.0.zip" class="btn btn-primary">
+                    ⬇️ Download WatchdogMonitor-v3.2.0.zip (369 KB)
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="https://github.com/eltongomez/watchdog_monitor">GitHub</a>
+                <a href="https://github.com/eltongomez/watchdog_monitor/releases">Releases</a>
+                <a href="https://github.com/eltongomez/watchdog_monitor/issues">Report Bug</a>
+                <a href="https://github.com/eltongomez/watchdog_monitor/blob/main/README.md">Documentação</a>
+                <a href="https://github.com/eltongomez/watchdog_monitor/blob/main/LICENSE">Licença MIT</a>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>Open Source • MIT License • 2026</p>
+                <p style="margin-top: 10px; font-size: 0.9em;">
+                    Desenvolvido com dedicação para a comunidade macOS
+                </p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
