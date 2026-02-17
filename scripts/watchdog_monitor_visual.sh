@@ -273,6 +273,51 @@ monitor_visual() {
         # Atualizar arquivo de status para widget
         update_status_file "$overall_text" "$smc_status" "$thermal_status" "$io_status" "$load_status" "$memory_status"
         
+        # ═══════════════════════════════════════════════════════════
+        # RECUPERAÇÃO AUTOMÁTICA (v2.0)
+        # ═══════════════════════════════════════════════════════════
+        if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
+            # SMC crítico
+            if [ $smc_ok -ne 0 ]; then
+                log_message "CRÍTICO: SMC não responde - iniciando recuperação de emergência"
+                source "$RECOVERY_SCRIPT"
+                emergency_smc_recovery
+            fi
+            
+            # Múltiplos problemas (3+)
+            if [ $problems -ge 3 ]; then
+                log_message "CRÍTICO: $problems problemas simultâneos - recuperação automática"
+                source "$RECOVERY_SCRIPT"
+                auto_recover "multiple" "critical"
+            fi
+            
+            # Problemas individuais
+            if [ $memory_ok -ne 0 ] && [ $iteration -gt 1 ]; then
+                log_message "AVISO: Memória baixa - liberando cache"
+                source "$RECOVERY_SCRIPT"
+                recover_memory
+            fi
+            
+            if [ $io_ok -ne 0 ] && [ $iteration -gt 1 ]; then
+                log_message "AVISO: I/O lento - sincronizando disco"
+                source "$RECOVERY_SCRIPT"
+                recover_io
+            fi
+            
+            if [ $load_ok -ne 0 ] && [ $iteration -gt 1 ]; then
+                log_message "AVISO: Carga alta - reduzindo prioridade"
+                source "$RECOVERY_SCRIPT"
+                recover_load
+            fi
+            
+            if [ $thermal_ok -ne 0 ] && [ $iteration -gt 1 ]; then
+                log_message "AVISO: Temperatura alta - notificando usuário"
+                source "$RECOVERY_SCRIPT"
+                recover_thermal
+            fi
+        fi
+        # ═══════════════════════════════════════════════════════════
+        
         # Enviar notificação se houver mudança de status
         current_notification="$overall_text"
         if [ "$current_notification" != "$last_notification" ] && [ $iteration -gt 1 ]; then
@@ -291,6 +336,53 @@ monitor_visual() {
         
         # Log das verificações
         log_message "Ciclo #$iteration - SMC:$smc_status | Thermal:$thermal_status | IO:$io_status | Load:$load_status | Mem:$memory_status"
+        
+        # ═══════════════════════════════════════════════════════════
+        # RECUPERAÇÃO AUTOMÁTICA (v2.0)
+        # ═══════════════════════════════════════════════════════════
+        if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
+            # SMC crítico
+            if [ $smc_ok -ne 0 ]; then
+                log_message "CRÍTICO: SMC não responde - iniciando recuperação de emergência"
+                source "$RECOVERY_SCRIPT"
+                emergency_smc_recovery
+            fi
+            
+            # Múltiplos problemas (3+)
+            if [ $problems -ge 3 ]; then
+                log_message "CRÍTICO: $problems problemas simultâneos - recuperação automática"
+                source "$RECOVERY_SCRIPT"
+                auto_recover "multiple" "critical"
+            fi
+            
+            # Problemas individuais (apenas no segundo ciclo em diante)
+            if [ $iteration -gt 1 ]; then
+                if [ $memory_ok -ne 0 ]; then
+                    log_message "AVISO: Memória baixa - liberando cache"
+                    source "$RECOVERY_SCRIPT"
+                    recover_memory
+                fi
+                
+                if [ $io_ok -ne 0 ]; then
+                    log_message "AVISO: I/O lento - sincronizando disco"
+                    source "$RECOVERY_SCRIPT"
+                    recover_io
+                fi
+                
+                if [ $load_ok -ne 0 ]; then
+                    log_message "AVISO: Carga alta - reduzindo prioridade"
+                    source "$RECOVERY_SCRIPT"
+                    recover_load
+                fi
+                
+                if [ $thermal_ok -ne 0 ]; then
+                    log_message "AVISO: Temperatura alta - notificando usuário"
+                    source "$RECOVERY_SCRIPT"
+                    recover_thermal
+                fi
+            fi
+        fi
+        # ═══════════════════════════════════════════════════════════
         
         # Keepalive
         sync
