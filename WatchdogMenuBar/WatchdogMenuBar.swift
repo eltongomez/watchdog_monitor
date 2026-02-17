@@ -127,13 +127,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             // Checks with colored dots
             if let checks = self.statusData["checks"] as? [String: String] {
-                let checkOrder = ["smc", "thermal", "io", "load", "memory"]
+                let checkOrder = ["smc", "thermal", "io", "load", "memory", "fan_rpm"]
                 let checkLabels = [
                     "smc": "SMC Status",
                     "thermal": "Temperature",
                     "io": "Disk I/O",
                     "load": "System Load",
-                    "memory": "Memory"
+                    "memory": "Memory",
+                    "fan_rpm": "🌀 Coolers"
                 ]
                 
                 for key in checkOrder {
@@ -141,7 +142,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                           let label = checkLabels[key] else { continue }
                     
                     let color: NSColor
-                    if value.contains("OK") {
+                    if key == "fan_rpm" {
+                        // Cor especial para RPM baseado no valor
+                        if value.contains("4200-") || value.contains("4800") {
+                            color = NSColor(red: 1.0, green: 0.23, blue: 0.19, alpha: 1.0) // Vermelho
+                        } else if value.contains("3500-") {
+                            color = NSColor(red: 1.0, green: 0.58, blue: 0.0, alpha: 1.0) // Laranja
+                        } else {
+                            color = NSColor(red: 0.20, green: 0.78, blue: 0.35, alpha: 1.0) // Verde
+                        }
+                    } else if value.contains("OK") {
                         color = NSColor(red: 0.20, green: 0.78, blue: 0.35, alpha: 1.0) // #34C759
                     } else if value.contains("CRÍTICO") || value.contains("ERRO") {
                         color = NSColor(red: 1.0, green: 0.23, blue: 0.19, alpha: 1.0) // #FF3B30

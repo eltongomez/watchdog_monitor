@@ -238,6 +238,12 @@ generate_dashboard() {
                 <div class="metric-label">Memória</div>
                 <div class="metric-value metric-$(get_metric_class "$memory")">$memory</div>
             </div>
+            
+            <div class="metric-card">
+                <div class="metric-icon">🌀</div>
+                <div class="metric-label">Coolers</div>
+                <div class="metric-value metric-ok">~${fan_rpm} RPM</div>
+            </div>
         </div>
         
         <a href="dashboard.html" class="manual-refresh">🔄 Atualizar Agora</a>

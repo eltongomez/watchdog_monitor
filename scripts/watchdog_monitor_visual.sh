@@ -49,6 +49,25 @@ create_status_badge() {
     echo -e "${color}●${NC} $status"
 }
 
+# Função para obter RPM estimado dos ventiladores
+get_fan_rpm_estimate() {
+    local load=$(uptime | awk -F'load averages:' '{print $2}' | awk '{print $1}' | tr -d ',')
+    local load_int=$(echo "$load" | awk '{printf "%.0f", $1}')
+    
+    # Estimativa baseada em load average e padrões do MacBook Air
+    if [ "$load_int" -ge 6 ]; then
+        echo "4200-4800"  # Maximum stress
+    elif [ "$load_int" -ge 4 ]; then
+        echo "3500-4200"  # High load
+    elif [ "$load_int" -ge 2 ]; then
+        echo "2500-3500"  # Medium load
+    elif [ "$load_int" -ge 1 ]; then
+        echo "2000-2500"  # Light load
+    else
+        echo "1800-2200"  # Idle/low load
+    fi
+}
+
 # Função para atualizar arquivo de status (para widget)
 update_status_file() {
     local status="$1"
@@ -57,6 +76,7 @@ update_status_file() {
     local io="$4"
     local load="$5"
     local memory="$6"
+    local fan_rpm="${7:-N/A}"
     
     cat > "$STATUS_FILE" << EOF
 {
@@ -67,7 +87,8 @@ update_status_file() {
         "thermal": "$thermal",
         "io": "$io",
         "load": "$load",
-        "memory": "$memory"
+        "memory": "$memory",
+        "fan_rpm": "$fan_rpm"
     },
     "uptime": "$SECONDS"
 }
@@ -94,6 +115,7 @@ show_dashboard() {
     echo -e "${CYAN}║${NC}  Disco I/O:   $5                              ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}  Carga:       $6                              ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}  Memória:     $7                              ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}  🌀 Coolers:  $8                              ${CYAN}║${NC}"
     echo -e "${CYAN}╠════════════════════════════════════════════════════════════╣${NC}"
     echo -e "${CYAN}║${NC}  ${BOLD}ÚLTIMOS EVENTOS${NC}                                          ${CYAN}║${NC}"
     echo -e "${CYAN}╠════════════════════════════════════════════════════════════╣${NC}"
@@ -242,6 +264,9 @@ monitor_visual() {
         memory_status=$(check_memory)
         memory_ok=$?
         
+        # Obter RPM dos ventiladores (estimativa)
+        fan_rpm_range=$(get_fan_rpm_estimate)
+        
         # Calcular status geral
         problems=0
         [ $smc_ok -ne 0 ] && problems=$((problems + 1))
@@ -271,6 +296,15 @@ monitor_visual() {
         load_badge=$([ $load_ok -eq 0 ] && echo "${GREEN}✓${NC} $load_status" || echo "${RED}✗${NC} $load_status")
         memory_badge=$([ $memory_ok -eq 0 ] && echo "${GREEN}✓${NC} $memory_status" || echo "${RED}✗${NC} $memory_status")
         
+        # Badge de RPM com cor baseada em carga
+        if [[ "$fan_rpm_range" =~ ^4[2-8] ]]; then
+            fan_badge="${RED}⚡${NC} ~${fan_rpm_range} RPM"
+        elif [[ "$fan_rpm_range" =~ ^3[5-9] ]]; then
+            fan_badge="${YELLOW}⚡${NC} ~${fan_rpm_range} RPM"
+        else
+            fan_badge="${GREEN}✓${NC} ~${fan_rpm_range} RPM"
+        fi
+        
         # Calcular uptime
         uptime_str="${SECONDS}s"
         if [ $SECONDS -ge 60 ]; then
@@ -283,10 +317,10 @@ monitor_visual() {
         fi
         
         # Atualizar dashboard
-        show_dashboard "$overall_status" "$uptime_str" "$smc_badge" "$thermal_badge" "$io_badge" "$load_badge" "$memory_badge"
+        show_dashboard "$overall_status" "$uptime_str" "$smc_badge" "$thermal_badge" "$io_badge" "$load_badge" "$memory_badge" "$fan_badge"
         
         # Atualizar arquivo de status para widget
-        update_status_file "$overall_text" "$smc_status" "$thermal_status" "$io_status" "$load_status" "$memory_status"
+        update_status_file "$overall_text" "$smc_status" "$thermal_status" "$io_status" "$load_status" "$memory_status" "$fan_rpm_range"
         
         # ═══════════════════════════════════════════════════════════
         # RECUPERAÇÃO AUTOMÁTICA (v2.0)
