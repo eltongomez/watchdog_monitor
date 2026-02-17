@@ -239,12 +239,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func isAutoStartEnabled() -> Bool {
-        let launchAgentPath = NSHomeDirectory() + "/Library/LaunchAgents/com.watchdog.menubar.plist"
+        let launchAgentPath = NSHomeDirectory() + "/Library/LaunchAgents/com.eltongomez.watchdogmonitor.plist"
         return FileManager.default.fileExists(atPath: launchAgentPath)
     }
     
     @objc func toggleAutoStart() {
-        let launchAgentPath = NSHomeDirectory() + "/Library/LaunchAgents/com.watchdog.menubar.plist"
+        let launchAgentPath = NSHomeDirectory() + "/Library/LaunchAgents/com.eltongomez.watchdogmonitor.plist"
         
         if isAutoStartEnabled() {
             // Disable auto-start - apenas remove o arquivo, não unload
@@ -280,7 +280,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             <plist version="1.0">
             <dict>
                 <key>Label</key>
-                <string>com.watchdog.menubar</string>
+                <string>com.eltongomez.watchdogmonitor</string>
                 <key>ProgramArguments</key>
                 <array>
                     <string>\(executablePath)</string>
@@ -288,7 +288,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 <key>RunAtLoad</key>
                 <true/>
                 <key>KeepAlive</key>
-                <true/>
+                <false/>
             </dict>
             </plist>
             """

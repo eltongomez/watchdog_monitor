@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.eltongomez.watchdogmonitor</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/elima/Applications/WatchdogMonitor.app/Contents/MacOS/WatchdogMenuBar</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <false/>
+    <key>StandardOutPath</key>
+    <string>/tmp/watchdog-menubar.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/watchdog-menubar-error.log</string>
+</dict>
+</plist>

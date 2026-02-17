@@ -16,6 +16,8 @@
     <string>3.0.0</string>
     <key>CFBundleVersion</key>
     <string>300</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>LSMinimumSystemVersion</key>
     <string>10.15</string>
     <key>LSUIElement</key>
