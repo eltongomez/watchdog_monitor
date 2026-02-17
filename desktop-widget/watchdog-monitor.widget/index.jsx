@@ -288,7 +288,17 @@ export const render = ({ output, error }) => {
                   setMenuOpen(false)
                 }}
               >
-                <span>▶</span> Start Monitor
+                <span>▸</span> Start Monitor
+              </div>
+              <div className={menuSeparatorStyle} />
+              <div 
+                className={menuItemStyle}
+                onClick={() => {
+                  run(`osascript -e 'tell application "Terminal" to do script "cd ~/Projects/watchdog_monitor && ./scripts/disable_watchdog.sh"'`)
+                  setMenuOpen(false)
+                }}
+              >
+                <span>⚙</span> Disable/Enable Watchdog
               </div>
               <div className={menuSeparatorStyle} />
               <div 
@@ -298,7 +308,7 @@ export const render = ({ output, error }) => {
                   setMenuOpen(false)
                 }}
               >
-                <span>📄</span> View Logs
+                <span>≡</span> View Logs
               </div>
               <div 
                 className={menuItemStyle}
@@ -307,7 +317,7 @@ export const render = ({ output, error }) => {
                   setMenuOpen(false)
                 }}
               >
-                <span>🔍</span> Run Diagnostics
+                <span>◉</span> Run Diagnostics
               </div>
             </div>
           )}
@@ -410,10 +420,10 @@ export const render = ({ output, error }) => {
       
       switch(action) {
         case 'stop':
-          run(`pkill -f watchdog_monitor_visual.sh`)
+          run(`pgrep -f watchdog_monitor_visual.sh | xargs kill`)
           break
         case 'restart':
-          run(`pkill -f watchdog_monitor_visual.sh && sleep 1 && cd ~/Projects/watchdog_monitor && nohup ./scripts/watchdog_monitor_visual.sh --daemon > /dev/null 2>&1 &`)
+          run(`pgrep -f watchdog_monitor_visual.sh | xargs kill && sleep 1 && cd ~/Projects/watchdog_monitor && nohup ./scripts/watchdog_monitor_visual.sh --daemon > /dev/null 2>&1 &`)
           break
         case 'logs':
           run(`open ~/Projects/watchdog_monitor/logs/watchdog_monitor.log`)
@@ -426,6 +436,9 @@ export const render = ({ output, error }) => {
           break
         case 'terminal':
           run(`osascript -e 'tell application "Terminal" to do script "cd ~/Projects/watchdog_monitor && ./scripts/watchdog_monitor_visual.sh"'`)
+          break
+        case 'watchdog':
+          run(`osascript -e 'tell application "Terminal" to do script "cd ~/Projects/watchdog_monitor && ./scripts/disable_watchdog.sh"'`)
           break
       }
     }
@@ -448,20 +461,20 @@ export const render = ({ output, error }) => {
               className={menuItemStyle}
               onClick={() => handleMenuAction('terminal')}
             >
-              <span>📊</span> Open Terminal View
+              <span>▸</span> Open Terminal View
             </div>
             <div 
               className={menuItemStyle}
               onClick={() => handleMenuAction('dashboard')}
             >
-              <span>🌐</span> Open Web Dashboard
+              <span>◆</span> Open Web Dashboard
             </div>
             <div className={menuSeparatorStyle} />
             <div 
               className={menuItemStyle}
               onClick={() => handleMenuAction('restart')}
             >
-              <span>🔄</span> Restart Monitor
+              <span>↻</span> Restart Monitor
             </div>
             <div 
               className={menuItemStyle}
@@ -472,15 +485,22 @@ export const render = ({ output, error }) => {
             <div className={menuSeparatorStyle} />
             <div 
               className={menuItemStyle}
+              onClick={() => handleMenuAction('watchdog')}
+            >
+              <span>⚙</span> Disable/Enable Watchdog
+            </div>
+            <div className={menuSeparatorStyle} />
+            <div 
+              className={menuItemStyle}
               onClick={() => handleMenuAction('logs')}
             >
-              <span>📄</span> View Logs
+              <span>≡</span> View Logs
             </div>
             <div 
               className={menuItemStyle}
               onClick={() => handleMenuAction('diagnostics')}
             >
-              <span>🔍</span> Run Diagnostics
+              <span>◉</span> Run Diagnostics
             </div>
           </div>
         )}
@@ -502,7 +522,7 @@ export const render = ({ output, error }) => {
             <div className={alertOverlayStyle} onClick={() => setAlertOpen(false)} />
             <div className={alertModalStyle}>
               <div className={alertTitleStyle}>
-                {alertData && alertData.some(w => w.type === 'error') ? '⚠️ System Alerts' : '⚡ System Warnings'}
+                {alertData && alertData.some(w => w.type === 'error') ? 'System Alerts' : 'System Warnings'}
               </div>
               <div className={alertContentStyle}>
                 {alertData && alertData.map((warning, i) => (
