@@ -126,22 +126,25 @@
     <div class="container">
         <header>
             <h1>🛡️ Watchdog Monitor</h1>
-            <p class="version">versão 3.0.0</p>
+            <p class="version">versão 3.2.0</p>
             <p>Sistema de Prevenção Automática de Kernel Panics para macOS</p>
+            <p style="margin-top: 15px; font-style: italic; opacity: 0.95;">
+                "Não apenas reage, previne. Não apenas monitora, aprende."
+            </p>
         </header>
 
         <div class="content">
             <div class="hero">
-                <div class="success-badge">✅ Comprovadamente Funcional!</div>
+                <div class="success-badge">✨ v3.2 - Prevenção Inteligente!</div>
                 <h2>Proteja seu Mac contra crashes do sistema</h2>
-                <p>Sistema inteligente de detecção e recuperação automática</p>
+                <p>Sistema inteligente de detecção, recuperação automática e prevenção proativa</p>
                 
-                <a href="https://github.com/eltongomez/watchdog_monitor/releases/download/v3.0.0/WatchdogMonitor-v3.0.0.zip" class="download-btn">
-                    ⬇️ Download v3.0.0 (35 KB)
+                <a href="https://github.com/eltongomez/watchdog_monitor/releases/download/v3.2.0/WatchdogMonitor-v3.2.0.zip" class="download-btn">
+                    ⬇️ Download v3.2.0
                 </a>
                 
                 <p style="color: #666; margin-top: 10px;">
-                    <small>SHA256: 3c001ac7dc7ddf606b4de26706f0c99a5a2bfc4207b9419e8246e7075efee456</small>
+                    <small>Latest Release • GitHub</small>
                 </p>
             </div>
 
@@ -160,7 +163,7 @@
                 </div>
             </div>
 
-            <h2 style="text-align: center; color: #667eea; margin: 40px 0 20px 0;">✨ Recursos</h2>
+            <h2 style="text-align: center; color: #667eea; margin: 40px 0 20px 0;">✨ Recursos v3.2</h2>
 
             <div class="feature">
                 <div class="feature-icon">🟢</div>
@@ -171,18 +174,34 @@
             </div>
 
             <div class="feature">
-                <div class="feature-icon">🔄</div>
+                <div class="feature-icon">🎚️</div>
                 <div class="feature-text">
-                    <h3>Recovery Automático</h3>
-                    <p>Detecta e corrige problemas de memória antes que causem crashes</p>
+                    <h3>Recovery Profiles (NEW!)</h3>
+                    <p>Escolha seu perfil: Conservative (Safe) / Balanced (Recommended) / Aggressive (Performance)</p>
                 </div>
             </div>
 
             <div class="feature">
-                <div class="feature-icon">🎯</div>
+                <div class="feature-icon">🛡️</div>
                 <div class="feature-text">
-                    <h3>Thresholds Inteligentes</h3>
-                    <p>Detecção precoce: Mem < 1000MB, Load ≥ 4.0</p>
+                    <h3>Anti-Crash Mode (NEW!)</h3>
+                    <p>4 níveis de proteção: Off / Light / Moderate / Aggressive - Keep-alive inteligente</p>
+                </div>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-text">
+                    <h3>Preemptive Recovery (NEW!)</h3>
+                    <p>Detecta tendências e age ANTES dos problemas - Machine learning básico</p>
+                </div>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">🔄</div>
+                <div class="feature-text">
+                    <h3>Recovery Automático</h3>
+                    <p>Detecta e corrige problemas de memória antes que causem crashes</p>
                 </div>
             </div>
 
@@ -198,7 +217,7 @@
 
             <h3>Método 1: Download Manual</h3>
             <div class="install-code">
-# 1. Baixe e descompacte o WatchdogMonitor-v3.0.0.zip<br>
+# 1. Baixe e descompacte o WatchdogMonitor-v3.2.0.zip<br>
 # 2. Mova para Applications<br>
 mv WatchdogMonitor.app ~/Applications/<br>
 <br>
@@ -206,10 +225,11 @@ mv WatchdogMonitor.app ~/Applications/<br>
 open ~/Applications/WatchdogMonitor.app
             </div>
 
-            <h3>Método 2: Via Homebrew (em breve)</h3>
+            <h3>Método 2: Via Git</h3>
             <div class="install-code">
-brew tap eltongomez/watchdog<br>
-brew install watchdog-monitor
+git clone https://github.com/eltongomez/watchdog_monitor.git<br>
+cd watchdog_monitor<br>
+./install.sh
             </div>
 
             <h2 style="text-align: center; color: #667eea; margin: 40px 0 20px 0;">📊 Teste Bem-Sucedido</h2>
