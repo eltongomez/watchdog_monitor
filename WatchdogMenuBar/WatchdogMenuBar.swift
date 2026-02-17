@@ -134,7 +134,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     "io": "Disk I/O",
                     "load": "System Load",
                     "memory": "Memory",
-                    "fan_rpm": "🌀 Coolers"
+                    "fan_rpm": "Coolers"
                 ]
                 
                 for key in checkOrder {

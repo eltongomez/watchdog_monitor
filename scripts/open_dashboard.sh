@@ -240,7 +240,7 @@ generate_dashboard() {
             </div>
             
             <div class="metric-card">
-                <div class="metric-icon">🌀</div>
+                <div class="metric-icon">⚡</div>
                 <div class="metric-label">Coolers</div>
                 <div class="metric-value metric-ok">~${fan_rpm} RPM</div>
             </div>

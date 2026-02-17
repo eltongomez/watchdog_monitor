@@ -51,21 +51,25 @@ create_status_badge() {
 
 # Função para obter RPM estimado dos ventiladores
 get_fan_rpm_estimate() {
-    local load=$(uptime | awk -F'load averages:' '{print $2}' | awk '{print $1}' | tr -d ',')
-    local load_int=$(echo "$load" | awk '{printf "%.0f", $1}')
+    # Extrair load e converter vírgula decimal para ponto (locale pt_BR usa vírgula)
+    local load=$(uptime | awk -F'load averages:' '{print $2}' | awk '{print $1}' | sed 's/,/./g' | xargs)
     
-    # Estimativa baseada em load average e padrões do MacBook Air
-    if [ "$load_int" -ge 6 ]; then
-        echo "4200-4800"  # Maximum stress
-    elif [ "$load_int" -ge 4 ]; then
-        echo "3500-4200"  # High load
-    elif [ "$load_int" -ge 2 ]; then
-        echo "2500-3500"  # Medium load
-    elif [ "$load_int" -ge 1 ]; then
-        echo "2000-2500"  # Light load
-    else
-        echo "1800-2200"  # Idle/low load
-    fi
+    # Usar comparação de floats com awk
+    local rpm=$(echo "$load" | awk '{
+        if ($1 >= 6.0) {
+            print "4200-4800"  # Maximum stress
+        } else if ($1 >= 4.0) {
+            print "3500-4200"  # High load
+        } else if ($1 >= 2.0) {
+            print "2500-3500"  # Medium load
+        } else if ($1 >= 1.0) {
+            print "2000-2500"  # Light load
+        } else {
+            print "1800-2200"  # Idle/low load
+        }
+    }')
+    
+    echo "$rpm"
 }
 
 # Função para atualizar arquivo de status (para widget)
@@ -115,7 +119,7 @@ show_dashboard() {
     echo -e "${CYAN}║${NC}  Disco I/O:   $5                              ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}  Carga:       $6                              ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}  Memória:     $7                              ${CYAN}║${NC}"
-    echo -e "${CYAN}║${NC}  🌀 Coolers:  $8                              ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}  Coolers:     $8                              ${CYAN}║${NC}"
     echo -e "${CYAN}╠════════════════════════════════════════════════════════════╣${NC}"
     echo -e "${CYAN}║${NC}  ${BOLD}ÚLTIMOS EVENTOS${NC}                                          ${CYAN}║${NC}"
     echo -e "${CYAN}╠════════════════════════════════════════════════════════════╣${NC}"
