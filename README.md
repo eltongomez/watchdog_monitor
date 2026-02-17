@@ -1,10 +1,16 @@
 # 🛡️ Watchdog Monitor - macOS Kernel Panic Prevention
 
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Shell](https://img.shields.io/badge/shell-bash-green.svg)](https://www.gnu.org/software/bash/)
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/eltongomez/watchdog_monitor/releases/tag/v3.0.0)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Shell](https://img.shields.io/badge/shell-bash-orange.svg)](https://www.gnu.org/software/bash/)
+[![Swift](https://img.shields.io/badge/swift-5.0+-red.svg)](https://swift.org)
 
-Sistema de monitoramento preventivo e ferramentas de diagnóstico para prevenir kernel panics causados por watchdog timeout em macOS.
+**Sistema de prevenção automática de kernel panics** com recovery inteligente e menu bar app nativo para macOS.
+
+### ✅ Comprovadamente Funcional - v3.0
+
+**Teste bem-sucedido em 2026-02-17:** Sistema detectou e recuperou automaticamente de condição crítica de memória, **prevenindo crash** durante abertura de projeto pesado no VSCode!
 
 ## 🚨 Problema
 
@@ -37,9 +43,56 @@ O SMC (System Management Controller) pode travar temporariamente, causando timeo
 - ✅ Nenhum driver de terceiros instalado
 - ❌ Reset SMC/NVRAM: Não resolveu
 
-## 🛠️ Soluções Implementadas
+## 🛠️ Sistema v3.0 - Recovery Automático
 
-### 1. Monitor Preventivo (`watchdog_monitor.sh`)
+### 🎯 Menu Bar App Nativo
+
+**WatchdogMonitor.app** - Aplicação Swift nativa na barra de menu:
+
+- 🟢 **Status Visual em Tempo Real**
+  - Verde: Sistema OK
+  - Amarelo: Alerta (memória/load moderado)
+  - Vermelho: Crítico (recovery em ação)
+
+- ⚡ **Ações Rápidas**
+  - Abrir Terminal View
+  - Abrir Web Dashboard
+  - Restart/Stop Monitor
+  - Ver Logs (Monitor + Recovery)
+  - Executar Diagnósticos
+
+- ⚙️ **Configurações**
+  - Toggle para iniciar com o sistema
+  - Gerenciamento automático de LaunchAgent
+
+### 🔄 Sistema de Recovery Automático
+
+**Detecção Inteligente com Thresholds Ajustados:**
+
+| Métrica | Crítico (Ação Imediata) | Alerta (2ª Iteração) |
+|---------|-------------------------|----------------------|
+| **Memória** | < 500MB | < 1000MB |
+| **Load** | ≥ 5.0 | ≥ 4.0 |
+
+**Ações de Recovery:**
+1. 🧹 Limpeza de cache com `sudo purge`
+2. 💾 Sincronização de disco com `sync`
+3. 📊 Logging detalhado de todas as ações
+4. ✅ Verificação pós-recovery
+
+**Intervalo de Monitoramento:**
+- 15 segundos em modo daemon
+- 78 segundos disponíveis para recovery (93s timeout - 15s detecção)
+- Ação imediata para casos críticos
+
+### 🔧 Configuração Sudo Automatizada
+
+Script `setup_sudo.sh` configura permissões necessárias:
+- ✅ Validação com `visudo -c`
+- ✅ Rollback automático em erro
+- ✅ Permissões apenas para comandos necessários: `purge`, `sync`, `reboot`
+
+### 📊 Monitoramento Tradicional
 
 Sistema de monitoramento em tempo real que:
 
@@ -52,34 +105,54 @@ Sistema de monitoramento em tempo real que:
 - ✅ Toma ações corretivas automáticas
 - ✅ Mantém log detalhado de eventos
 
-### 2. Desabilitar Watchdog (`disable_watchdog.sh`)
+### 🎨 Dashboard Web Visual
 
-Workaround temporário para diagnóstico:
-
-- Desabilita o watchdog modificando boot arguments
-- Permite confirmar se o problema é o watchdog
-- Fácil de reverter
-- ⚠️ Apenas para diagnóstico, não usar permanentemente
-
-### 3. Diagnóstico Completo (`diagnostico_disco.sh`)
-
-Ferramentas de diagnóstico:
-
-- Verifica SMART status
-- Testa I/O de disco
-- Analisa sistema de arquivos
-- Verifica logs do sistema
-- Identifica kernel extensions problemáticas
+Interface web com gráficos em tempo real:
+- 📈 Gráfico de load/memória
+- 🔔 Alertas visuais
+- 📊 Estatísticas de uptime
+- 🎯 Status de todos os componentes
 
 ## 📦 Instalação
 
+### Opção 1: Instalação Completa com Menu Bar App (Recomendado)
+
 ```bash
 # Clone o repositório
-git clone https://github.com/elima/watchdog_monitor.git
+git clone https://github.com/eltongomez/watchdog_monitor.git
 cd watchdog_monitor
 
 # Torne os scripts executáveis
 chmod +x scripts/*.sh
+
+# Configure permissões sudo (necessário para recovery automático)
+./scripts/setup_sudo.sh
+
+# Instale o Menu Bar App
+mkdir -p ~/Applications/WatchdogMonitor
+cp WatchdogMonitorApp ~/Applications/WatchdogMonitor/WatchdogMenuBar
+chmod +x ~/Applications/WatchdogMonitor/WatchdogMenuBar
+
+# Inicie o monitor em modo daemon
+./scripts/watchdog_monitor_visual.sh --daemon
+
+# Inicie o Menu Bar App
+open ~/Applications/WatchdogMonitor/WatchdogMenuBar
+```
+
+### Opção 2: Download do Release (Em breve)
+
+```bash
+# Download do .app.zip do GitHub Releases
+# Descompacte e arraste para ~/Applications/
+# O app gerenciará automaticamente o monitor
+```
+
+### Opção 3: Via Homebrew (Em breve)
+
+```bash
+brew tap eltongomez/watchdog
+brew install watchdog-monitor
 ```
 
 ## 🚀 Uso

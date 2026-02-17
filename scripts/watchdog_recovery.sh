@@ -15,14 +15,15 @@ log_recovery() {
 recover_memory() {
     log_recovery "AÇÃO: Liberando memória do sistema"
     
-    # Limpar cache
-    sudo purge 2>/dev/null
-    
-    if [ $? -eq 0 ]; then
+    # Limpar cache com sudo (agora configurado)
+    if sudo -n purge 2>/dev/null; then
         log_recovery "✓ Cache limpo com sucesso"
         return 0
     else
-        log_recovery "✗ Falha ao limpar cache (sudo necessário)"
+        log_recovery "✗ Falha ao limpar cache (erro: $?)"
+        log_recovery "  Tentando sync como fallback..."
+        sync && sync && sync
+        log_recovery "  Sync executado"
         return 1
     fi
 }

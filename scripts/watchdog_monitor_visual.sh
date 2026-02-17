@@ -8,6 +8,16 @@ LOG_FILE="$PROJECT_DIR/logs/watchdog_monitor.log"
 STATUS_FILE="/tmp/watchdog_status.txt"
 ICON_DIR="$PROJECT_DIR/.icons"
 
+# Configuração de Recovery v2.0
+RECOVERY_ENABLED=true
+RECOVERY_SCRIPT="$SCRIPT_DIR/watchdog_recovery.sh"
+RECOVERY_CONFIG="$PROJECT_DIR/config/recovery.conf"
+
+# Carregar configurações
+if [ -f "$RECOVERY_CONFIG" ]; then
+    source "$RECOVERY_CONFIG"
+fi
+
 # Cores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -168,10 +178,12 @@ check_disk_io() {
 check_load() {
     load_avg=$(sysctl -n vm.loadavg | awk '{print $2}')
     load_avg=$(echo "$load_avg" | tr ',' '.')
-    load_int=$(echo "$load_avg" | cut -d. -f1)
-    load_int=${load_int:-0}
     
-    if [ "$load_int" -gt 8 ]; then
+    # Usar awk para comparação de ponto flutuante
+    if awk "BEGIN {exit !($load_avg >= 5.0)}"; then
+        echo "CRÍTICO ($load_avg)"
+        return 2
+    elif awk "BEGIN {exit !($load_avg >= 4.0)}"; then
         echo "ALTO ($load_avg)"
         return 1
     else
@@ -185,7 +197,10 @@ check_memory() {
     free_mem=$(vm_stat | grep "Pages free" | awk '{print $3}' | sed 's/\.//')
     free_mb=$((free_mem * 4096 / 1024 / 1024))
     
-    if [ "$free_mb" -lt 100 ]; then
+    if [ "$free_mb" -lt 500 ]; then
+        echo "CRÍTICO (${free_mb}MB)"
+        return 2
+    elif [ "$free_mb" -lt 1000 ]; then
         echo "BAIXO (${free_mb}MB)"
         return 1
     else
@@ -355,30 +370,57 @@ monitor_visual() {
                 auto_recover "multiple" "critical"
             fi
             
-            # Problemas individuais (apenas no segundo ciclo em diante)
-            if [ $iteration -gt 1 ]; then
-                if [ $memory_ok -ne 0 ]; then
-                    log_message "AVISO: Memória baixa - liberando cache"
+            # Problemas individuais - AÇÃO IMEDIATA para casos críticos
+            # Memória
+            if [ $memory_ok -eq 2 ]; then
+                # CRÍTICA (< 500MB) - age imediatamente
+                log_message "CRÍTICO: Memória crítica (< 500MB) - ação imediata"
+                if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
                     source "$RECOVERY_SCRIPT"
                     recover_memory
                 fi
-                
-                if [ $io_ok -ne 0 ]; then
-                    log_message "AVISO: I/O lento - sincronizando disco"
+            elif [ $memory_ok -eq 1 ] && [ $iteration -gt 1 ]; then
+                # BAIXA (< 1000MB) - age na 2ª iteração
+                log_message "AVISO: Memória baixa (< 1000MB) - liberando cache"
+                if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
                     source "$RECOVERY_SCRIPT"
-                    recover_io
+                    recover_memory
                 fi
-                
-                if [ $load_ok -ne 0 ]; then
-                    log_message "AVISO: Carga alta - reduzindo prioridade"
+            fi
+            
+            # Load
+            if [ $load_ok -eq 2 ]; then
+                # CRÍTICO (>= 5.0) - age imediatamente
+                log_message "CRÍTICO: Load crítico (>= 5.0) - ação imediata"
+                if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
                     source "$RECOVERY_SCRIPT"
                     recover_load
+                fi
+            elif [ $load_ok -eq 1 ] && [ $iteration -gt 1 ]; then
+                # ALTO (>= 4.0) - age na 2ª iteração
+                log_message "AVISO: Carga alta (>= 4.0) - reduzindo prioridade"
+                if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
+                    source "$RECOVERY_SCRIPT"
+                    recover_load
+                fi
+            fi
+            
+            # I/O e Thermal - apenas na 2ª iteração
+            if [ $iteration -gt 1 ]; then
+                if [ $io_ok -ne 0 ]; then
+                    log_message "AVISO: I/O lento - sincronizando disco"
+                    if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
+                        source "$RECOVERY_SCRIPT"
+                        recover_io
+                    fi
                 fi
                 
                 if [ $thermal_ok -ne 0 ]; then
                     log_message "AVISO: Temperatura alta - notificando usuário"
-                    source "$RECOVERY_SCRIPT"
-                    recover_thermal
+                    if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
+                        source "$RECOVERY_SCRIPT"
+                        recover_thermal
+                    fi
                 fi
             fi
         fi
@@ -402,10 +444,10 @@ main() {
     
     if [ "$1" == "--daemon" ]; then
         echo "Iniciando em modo daemon..."
-        monitor_visual 30 > /dev/null 2>&1 &
+        monitor_visual 15 > /dev/null 2>&1 &
         daemon_pid=$!
         echo "$daemon_pid" > /tmp/watchdog_monitor_visual.pid
-        echo -e "${GREEN}✅ Daemon iniciado com PID: $daemon_pid${NC}"
+        echo -e "${GREEN}✅ Daemon iniciado com PID: $daemon_pid${NC} ${YELLOW}(check a cada 15s)${NC}"
         echo ""
         echo "Para ver o dashboard:"
         echo "  $0"
@@ -416,9 +458,9 @@ main() {
         echo "  kill \$(cat /tmp/watchdog_monitor_visual.pid)"
     else
         # Perguntar intervalo
-        echo "Intervalo de monitoramento em segundos [30]:"
-        read -t 10 user_interval || user_interval=30
-        user_interval=${user_interval:-30}
+        echo "Intervalo de monitoramento em segundos [15]:"
+        read -t 10 user_interval || user_interval=15
+        user_interval=${user_interval:-15}
         
         echo ""
         echo -e "${GREEN}Iniciando monitoramento visual...${NC}"

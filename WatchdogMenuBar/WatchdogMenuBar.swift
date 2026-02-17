@@ -172,8 +172,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self.menu.addItem(NSMenuItem(title: "Disable/Enable Watchdog", action: #selector(self.toggleWatchdog), keyEquivalent: "w"))
             self.menu.addItem(NSMenuItem.separator())
             
-            self.menu.addItem(NSMenuItem(title: "View Logs", action: #selector(self.viewLogs), keyEquivalent: "l"))
+            // View Logs submenu
+            let logsMenu = NSMenu()
+            logsMenu.addItem(NSMenuItem(title: "Monitor Logs", action: #selector(self.viewMonitorLogs), keyEquivalent: ""))
+            logsMenu.addItem(NSMenuItem(title: "Recovery Logs (tail -f)", action: #selector(self.viewRecoveryLogs), keyEquivalent: ""))
+            let logsMenuItem = NSMenuItem(title: "View Logs", action: nil, keyEquivalent: "l")
+            logsMenuItem.submenu = logsMenu
+            self.menu.addItem(logsMenuItem)
+            
             self.menu.addItem(NSMenuItem(title: "Run Diagnostics", action: #selector(self.runDiagnostics), keyEquivalent: ""))
+            self.menu.addItem(NSMenuItem.separator())
+            
+            // Settings submenu
+            let settingsMenu = NSMenu()
+            let autoStartItem = NSMenuItem(title: self.isAutoStartEnabled() ? "✓ Iniciar com o Sistema" : "  Iniciar com o Sistema", 
+                                          action: #selector(AppDelegate.toggleAutoStart), 
+                                          keyEquivalent: "")
+            autoStartItem.target = self
+            settingsMenu.addItem(autoStartItem)
+            
+            let settingsItem = NSMenuItem(title: "Configurações", action: nil, keyEquivalent: "")
+            settingsItem.submenu = settingsMenu
+            self.menu.addItem(settingsItem)
             self.menu.addItem(NSMenuItem.separator())
             
             self.menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
@@ -206,12 +226,94 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         runCommand("osascript -e 'tell application \"Terminal\" to do script \"cd ~/Projects/watchdog_monitor && ./scripts/disable_watchdog.sh\"'")
     }
     
-    @objc func viewLogs() {
+    @objc func viewMonitorLogs() {
         runCommand("open ~/Projects/watchdog_monitor/logs/watchdog_monitor.log")
+    }
+    
+    @objc func viewRecoveryLogs() {
+        runCommand("osascript -e 'tell application \"Terminal\" to do script \"tail -f ~/Projects/watchdog_monitor/logs/watchdog_recovery.log\"'")
     }
     
     @objc func runDiagnostics() {
         runCommand("osascript -e 'tell application \"Terminal\" to do script \"cd ~/Projects/watchdog_monitor && ./scripts/diagnostico_disco.sh\"'")
+    }
+    
+    func isAutoStartEnabled() -> Bool {
+        let launchAgentPath = NSHomeDirectory() + "/Library/LaunchAgents/com.watchdog.menubar.plist"
+        return FileManager.default.fileExists(atPath: launchAgentPath)
+    }
+    
+    @objc func toggleAutoStart() {
+        let launchAgentPath = NSHomeDirectory() + "/Library/LaunchAgents/com.watchdog.menubar.plist"
+        
+        if isAutoStartEnabled() {
+            // Disable auto-start - apenas remove o arquivo, não unload
+            do {
+                try FileManager.default.removeItem(atPath: launchAgentPath)
+                
+                let alert = NSAlert()
+                alert.messageText = "Inicialização Automática Desabilitada"
+                alert.informativeText = "O app não será mais iniciado automaticamente com o sistema.\n\nNota: A alteração terá efeito no próximo login."
+                alert.alertStyle = .informational
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+                
+                // Refresh menu
+                loadStatus()
+            } catch {
+                let alert = NSAlert()
+                alert.messageText = "Erro"
+                alert.informativeText = "Falha ao remover configuração: \(error.localizedDescription)"
+                alert.alertStyle = .warning
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+            }
+        } else {
+            // Enable auto-start
+            let appPath = Bundle.main.bundlePath
+            let executablePath = appPath.hasSuffix(".app") ? 
+                "\(appPath)/Contents/MacOS/WatchdogMenuBar" : appPath
+            
+            let plistContent = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>Label</key>
+                <string>com.watchdog.menubar</string>
+                <key>ProgramArguments</key>
+                <array>
+                    <string>\(executablePath)</string>
+                </array>
+                <key>RunAtLoad</key>
+                <true/>
+                <key>KeepAlive</key>
+                <true/>
+            </dict>
+            </plist>
+            """
+            
+            do {
+                try plistContent.write(toFile: launchAgentPath, atomically: true, encoding: .utf8)
+                
+                let alert = NSAlert()
+                alert.messageText = "Inicialização Automática Habilitada"
+                alert.informativeText = "O app será iniciado automaticamente quando você fizer login.\n\nNota: A alteração terá efeito no próximo login."
+                alert.alertStyle = .informational
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+                
+                // Refresh menu
+                loadStatus()
+            } catch {
+                let alert = NSAlert()
+                alert.messageText = "Erro"
+                alert.informativeText = "Falha ao configurar inicialização automática: \(error.localizedDescription)"
+                alert.alertStyle = .warning
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+            }
+        }
     }
     
     func runCommand(_ command: String) {
