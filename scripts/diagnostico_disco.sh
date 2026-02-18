@@ -1,11 +1,15 @@
 #!/bin/bash
-# Script de Diagnóstico de Disco - macOS
+# Script de Diagnóstico de Disco - macOS (Versão SEGURA)
 # Determina se o problema é hardware ou software
+# ⚠️  OTIMIZADO: Comandos leves para evitar sobrecarga do sistema
 
 echo "============================================"
-echo "DIAGNÓSTICO DE DISCO - macOS"
+echo "DIAGNÓSTICO DE DISCO - macOS (VERSÃO SEGURA)"
 echo "Data: $(date)"
 echo "============================================"
+echo ""
+echo "⚠️  AVISO: Este diagnóstico usa comandos LEVES para evitar"
+echo "   sobrecarga do sistema e possíveis travamentos."
 echo ""
 
 # 1. RESET SMC E NVRAM (SOFTWARE)
@@ -52,28 +56,32 @@ echo ""
 diskutil verifyVolume / 2>&1
 echo ""
 
-# 4. VERIFICAR LOGS DO SISTEMA
+# 4. VERIFICAR LOGS DO SISTEMA (versão LEVE - últimas 2 horas apenas)
 echo ""
 echo "=== 4. VERIFICANDO LOGS DE ERRO DO DISCO ==="
-echo "Procurando por erros de I/O nos últimos 7 dias..."
+echo "⚠️  Verificação LEVE: últimas 2 horas (para evitar sobrecarga)"
 echo ""
-log show --predicate 'eventMessage contains "disk" OR eventMessage contains "I/O" OR eventMessage contains "SATA"' --info --last 7d | grep -i "error\|fail\|timeout" | tail -20
+# IMPORTANTE: NÃO usar --last 7d - pode travar logd e causar kernel panic!
+log show --predicate 'eventMessage contains "disk" OR eventMessage contains "I/O" OR eventMessage contains "SATA"' --info --last 2h 2>/dev/null | grep -i "error\|fail\|timeout" | tail -20
+if [ $? -ne 0 ]; then
+    echo "✓ Nenhum erro crítico de disco nas últimas 2 horas"
+fi
 echo ""
 
-# 5. TESTE DE LEITURA/ESCRITA
+# 5. TESTE DE LEITURA/ESCRITA (REDUZIDO - 10MB apenas)
 echo ""
 echo "=== 5. TESTE SIMPLES DE LEITURA/ESCRITA ==="
-echo "Criando arquivo de teste..."
+echo "⚠️  Teste LEVE: 10MB (para evitar sobrecarga do sistema)"
 echo ""
 
 TEST_FILE="/tmp/disk_test_$(date +%s).tmp"
-echo "Testando escrita..."
-time dd if=/dev/zero of="$TEST_FILE" bs=1m count=100 2>&1
+echo "Testando escrita de 10MB..."
+dd if=/dev/zero of="$TEST_FILE" bs=1m count=10 2>&1 | grep -E "bytes|records"
 
 if [ $? -eq 0 ]; then
     echo "✅ Escrita: OK"
     echo "Testando leitura..."
-    time dd if="$TEST_FILE" of=/dev/null bs=1m 2>&1
+    dd if="$TEST_FILE" of=/dev/null bs=1m 2>&1 | grep -E "bytes|records"
     
     if [ $? -eq 0 ]; then
         echo "✅ Leitura: OK"
@@ -94,10 +102,11 @@ echo ""
 kextstat | grep -i "storage\|disk\|ata\|ahci\|nvme"
 echo ""
 
-# 7. INFORMAÇÕES DO SISTEMA
+# 7. INFORMAÇÕES DO SISTEMA (resumido)
 echo ""
 echo "=== 7. INFORMAÇÕES DO SISTEMA ==="
-system_profiler SPStorageDataType 2>&1 | head -30
+echo "Discos disponíveis:"
+diskutil list | head -20
 echo ""
 
 # 8. VERIFICAR SE HÁ ATUALIZAÇÕES PENDENTES
