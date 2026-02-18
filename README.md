@@ -76,16 +76,18 @@ O SMC (System Management Controller) pode travar temporariamente, causando timeo
   - Vermelho: Crítico (recovery em ação)
 
 - ⚡ **Ações Rápidas**
+  - Run Diagnostics (Disco + Profile Wizard)
   - Abrir Terminal View
   - Abrir Web Dashboard
   - Restart/Stop Monitor
   - Ver Logs (Monitor + Recovery)
-  - Executar Diagnósticos
+  - Run Diagnostics (Disco + Profile Wizard) 🆕
 
 - 🎚️ **Recovery Profiles (v3.2 NEW!)**
   - Conservative (Safe) - Thresholds conservadores
-  - Balanced (Recommended) - Equilíbrio ideal
+  - Balanced (Recommended) - Equilíbrio ideal ⭐
   - Aggressive (Performance) - Ação rápida preventiva
+  - 🧠 Profile Wizard - Recomendação automática baseada em hardware 🆕
 
 - 🛡️ **Anti-Crash Mode (v3.2 NEW!)**
   - Off - Sem intervenção power management
