@@ -332,7 +332,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func runDiagnostics() {
-        runCommand("osascript -e 'tell application \"Terminal\" to do script \"cd ~/Projects/watchdog_monitor && ./scripts/diagnostico_disco.sh\"'")
+        runCommand("osascript -e 'tell application \"Terminal\" to do script \"cd ~/Projects/watchdog_monitor && ./scripts/run_full_diagnostics.sh\"'")
     }
     
     func isAutoStartEnabled() -> Bool {
