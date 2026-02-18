@@ -488,7 +488,7 @@ preemptive_recovery() {
     return 0
 }
 
-# Se executado diretamente
-if [ "$1" != "" ]; then
+# Se executado diretamente (não quando sourced por outro script)
+if [ "${BASH_SOURCE[0]}" = "$0" ] && [ "$1" != "" ]; then
     auto_recover "$1" "$2"
 fi

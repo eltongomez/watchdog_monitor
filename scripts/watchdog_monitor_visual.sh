@@ -354,45 +354,42 @@ monitor_visual() {
         fi
         
         # ═══════════════════════════════════════════════════════════
-        # RECUPERAÇÃO AUTOMÁTICA (v2.0)
+        # RECUPERAÇÃO AUTOMÁTICA (v3.0 - bloco unificado)
         # ═══════════════════════════════════════════════════════════
         if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
+            # Garante que as funções estejam carregadas (uma única vez)
+            source "$RECOVERY_SCRIPT"
+
             # SMC crítico
             if [ $smc_ok -ne 0 ]; then
                 log_message "CRÍTICO: SMC não responde - iniciando recuperação de emergência"
-                source "$RECOVERY_SCRIPT"
                 emergency_smc_recovery
             fi
             
             # Múltiplos problemas (3+)
             if [ $problems -ge 3 ]; then
                 log_message "CRÍTICO: $problems problemas simultâneos - recuperação automática"
-                source "$RECOVERY_SCRIPT"
                 auto_recover "multiple" "critical"
             fi
             
             # Problemas individuais
             if [ $memory_ok -ne 0 ] && [ $iteration -gt 1 ]; then
                 log_message "AVISO: Memória baixa - liberando cache"
-                source "$RECOVERY_SCRIPT"
                 recover_memory
             fi
             
             if [ $io_ok -ne 0 ] && [ $iteration -gt 1 ]; then
                 log_message "AVISO: I/O lento - sincronizando disco"
-                source "$RECOVERY_SCRIPT"
                 recover_io
             fi
             
             if [ $load_ok -ne 0 ] && [ $iteration -gt 1 ]; then
                 log_message "AVISO: Carga alta - reduzindo prioridade"
-                source "$RECOVERY_SCRIPT"
                 recover_load
             fi
             
             if [ $thermal_ok -ne 0 ] && [ $iteration -gt 1 ]; then
                 log_message "AVISO: Temperatura alta - notificando usuário"
-                source "$RECOVERY_SCRIPT"
                 recover_thermal
             fi
         fi
@@ -418,77 +415,7 @@ monitor_visual() {
         log_message "Ciclo #$iteration - SMC:$smc_status | Thermal:$thermal_status | IO:$io_status | Load:$load_status | Mem:$memory_status"
         
         # ═══════════════════════════════════════════════════════════
-        # RECUPERAÇÃO AUTOMÁTICA (v2.0)
-        # ═══════════════════════════════════════════════════════════
-        if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
-            # SMC crítico
-            if [ $smc_ok -ne 0 ]; then
-                log_message "CRÍTICO: SMC não responde - iniciando recuperação de emergência"
-                source "$RECOVERY_SCRIPT"
-                emergency_smc_recovery
-            fi
-            
-            # Múltiplos problemas (3+)
-            if [ $problems -ge 3 ]; then
-                log_message "CRÍTICO: $problems problemas simultâneos - recuperação automática"
-                source "$RECOVERY_SCRIPT"
-                auto_recover "multiple" "critical"
-            fi
-            
-            # Problemas individuais - AÇÃO IMEDIATA para casos críticos
-            # Memória
-            if [ $memory_ok -eq 2 ]; then
-                # CRÍTICA (< 500MB) - age imediatamente
-                log_message "CRÍTICO: Memória crítica (< 500MB) - ação imediata"
-                if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
-                    source "$RECOVERY_SCRIPT"
-                    recover_memory
-                fi
-            elif [ $memory_ok -eq 1 ] && [ $iteration -gt 1 ]; then
-                # BAIXA (< 1000MB) - age na 2ª iteração
-                log_message "AVISO: Memória baixa (< 1000MB) - liberando cache"
-                if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
-                    source "$RECOVERY_SCRIPT"
-                    recover_memory
-                fi
-            fi
-            
-            # Load
-            if [ $load_ok -eq 2 ]; then
-                # CRÍTICO (>= 5.0) - age imediatamente
-                log_message "CRÍTICO: Load crítico (>= 5.0) - ação imediata"
-                if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
-                    source "$RECOVERY_SCRIPT"
-                    recover_load
-                fi
-            elif [ $load_ok -eq 1 ] && [ $iteration -gt 1 ]; then
-                # ALTO (>= 4.0) - age na 2ª iteração
-                log_message "AVISO: Carga alta (>= 4.0) - reduzindo prioridade"
-                if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
-                    source "$RECOVERY_SCRIPT"
-                    recover_load
-                fi
-            fi
-            
-            # I/O e Thermal - apenas na 2ª iteração
-            if [ $iteration -gt 1 ]; then
-                if [ $io_ok -ne 0 ]; then
-                    log_message "AVISO: I/O lento - sincronizando disco"
-                    if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
-                        source "$RECOVERY_SCRIPT"
-                        recover_io
-                    fi
-                fi
-                
-                if [ $thermal_ok -ne 0 ]; then
-                    log_message "AVISO: Temperatura alta - notificando usuário"
-                    if [ "$RECOVERY_ENABLED" = true ] && [ -f "$RECOVERY_SCRIPT" ]; then
-                        source "$RECOVERY_SCRIPT"
-                        recover_thermal
-                    fi
-                fi
-            fi
-        fi
+        # RECUPERAÇÃO AUTOMÁTICA (v3.0 - bloco unificado, acima)
         # ═══════════════════════════════════════════════════════════
         
         # Keepalive
